@@ -22,6 +22,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.renderscript.RenderScript;
+import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -58,6 +59,7 @@ public class MainActivity  extends AppCompatActivity {
 
     private static final int PERMISSION_CODE_STORAGE = 3001;
     private static final int PERMISSION_CODE_CAMERA = 3002;
+    private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 3003;
     private boolean isCameraView = true;
     private RenderScript rs;
     private boolean frameIsProcessing = false;
@@ -138,6 +140,27 @@ public class MainActivity  extends AppCompatActivity {
         }
         if (requestCode != PERMISSION_CODE_STORAGE && requestCode != PERMISSION_CODE_CAMERA) {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+
+            if (resultCode == RESULT_OK) {
+
+
+
+
+            } else if (resultCode == RESULT_CANCELED) {
+
+                Toast.makeText(this, " Picture was not taken ", Toast.LENGTH_SHORT).show();
+            } else {
+
+                Toast.makeText(this, " Picture was not taken ", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -264,10 +287,15 @@ public class MainActivity  extends AppCompatActivity {
 
             ContentValues values = new ContentValues();
             values.put(MediaStore.Images.Media.DISPLAY_NAME, fileName);
+            values.put(MediaStore.Images.Media.TITLE, fileName);
             values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg");
+            values.put(MediaStore.Images.Media.DESCRIPTION, "Buratoku image");
+            values.put(MediaStore.MediaColumns.IS_PENDING, 0);
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                values.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera/");
-                values.put(MediaStore.MediaColumns.IS_PENDING, 1);
+                final String relativeLocation = Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, relativeLocation);
+//                values.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/Camera/");
             } else {
                 File directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
                 File file = new File(directory, "Camera/" + fileName);
@@ -278,6 +306,12 @@ public class MainActivity  extends AppCompatActivity {
             try (OutputStream output = getContentResolver().openOutputStream(uri)) {
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, output);
             }
+
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+            intent.putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1);
+            startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+
 
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             builder.setMessage(fileName + " was saved.");
